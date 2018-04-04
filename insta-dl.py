@@ -17,8 +17,11 @@ window = tkinter.Tk()
 
 def download(username):
     request_url = "https://www.instagram.com/" + username + "?__a=1"
+    updated_request_url = "https://instagram.com/graphql/query/?query_id=17888483320059182"
     more_available = True
     end_cursors = []
+    user_id = None
+    baseurlbool = True
 
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0'
@@ -32,8 +35,11 @@ def download(username):
             response = requests.get(request_url, headers=headers)
 
         else:
-            print(request_url + "&max_id={}".format(end_cursors[-1]))
-            response = requests.get(request_url + "&max_id={}".format(end_cursors[-1]), headers=headers)
+            print(updated_request_url + "&id={}".format(user_id) + "&first=12&after={}".format(end_cursors[-1]))
+            # https://instagram.com/graphql/query/?query_id=17888483320059182&id=6765242919&first=12&after={max_id/end_cursor}
+            response = requests.get(
+                (updated_request_url + "&id={}".format(user_id) + "&first=12&after={}".format(end_cursors[-1])),
+                headers=headers)
 
         try:
             # data = response.json()
@@ -45,7 +51,12 @@ def download(username):
 
         print(json_data.keys())
         # for node in json_data["user"]["media"]["nodes"]:
-        for node in json_data['graphql']['user']['edge_owner_to_timeline_media']['edges']:
+        if baseurlbool:
+            nodes = json_data['graphql']['user']['edge_owner_to_timeline_media']['edges']
+        else:
+            nodes = json_data['data']['user']['edge_owner_to_timeline_media']['edges']
+
+        for node in nodes:
 
             # Cant access video url anymore
             # if src["is_video"] and do_download_videos.get() == 1:
@@ -75,13 +86,20 @@ def download(username):
                         print("\033[91m----Skipping this image----\033[0m")
 
         # more_available = json_data["user"]["media"]["page_info"]["has_next_page"]
-        more_available = json_data["graphql"]["user"]["edge_owner_to_timeline_media"]["page_info"]["has_next_page"]
+        if baseurlbool:
+            more_available = json_data["graphql"]["user"]["edge_owner_to_timeline_media"]["page_info"]["has_next_page"]
+            user_id = json_data["graphql"]["user"]["id"]
+            end_cursor = json_data["graphql"]["user"]["edge_owner_to_timeline_media"]["page_info"]["end_cursor"]
+            baseurlbool = False
 
-        new_max_id = json_data["graphql"]["user"]["edge_owner_to_timeline_media"]["page_info"]["end_cursor"]
-        end_cursors.append(new_max_id)
+        else:
+            more_available = json_data["data"]["user"]["edge_owner_to_timeline_media"]["page_info"]["has_next_page"]
+            end_cursor = json_data["data"]["user"]["edge_owner_to_timeline_media"]["page_info"]["end_cursor"]
+
+        end_cursors.append(end_cursor)
 
         if more_available:
-            print("\033[92mGetting next page of images with maximum id: " + new_max_id + "\033[0m")
+            print("\033[92mGetting next page of images with end_cursor: " + end_cursor + "\033[0m")
         print("\033[92m--------------Completed--------------\033[0m")
 
 
