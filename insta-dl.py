@@ -28,10 +28,12 @@ def download(username):
 
     while more_available:
         if not end_cursors:
+            print(request_url)
             response = requests.get(request_url, headers=headers)
 
         else:
-            response = requests.get(request_url + "&max_id={}".format(end_cursors[-1]))
+            print(request_url + "&max_id={}".format(end_cursors[-1]))
+            response = requests.get(request_url + "&max_id={}".format(end_cursors[-1]), headers=headers)
 
         try:
             # data = response.json()
@@ -44,10 +46,12 @@ def download(username):
         print(json_data.keys())
         # for node in json_data["user"]["media"]["nodes"]:
         for node in json_data['graphql']['user']['edge_owner_to_timeline_media']['edges']:
+
             # Cant access video url anymore
             # if src["is_video"] and do_download_videos.get() == 1:
             #   file_url = src["videos"]["standard_resolution"]["url"]
             # else:
+
             file_url = node['node']['display_url']
             # file_url = file_url.replace("s640x640", "s1080x1080")
             file_name = file_url.split("/")[-1]
@@ -70,9 +74,10 @@ def download(username):
                     except:
                         print("\033[91m----Skipping this image----\033[0m")
 
-        more_available = json_data["user"]["media"]["page_info"]["has_next_page"]
+        # more_available = json_data["user"]["media"]["page_info"]["has_next_page"]
+        more_available = json_data["graphql"]["user"]["edge_owner_to_timeline_media"]["page_info"]["has_next_page"]
 
-        new_max_id = json_data["user"]["media"]["page_info"]["end_cursor"]
+        new_max_id = json_data["graphql"]["user"]["edge_owner_to_timeline_media"]["page_info"]["end_cursor"]
         end_cursors.append(new_max_id)
 
         if more_available:
