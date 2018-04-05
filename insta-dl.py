@@ -1,3 +1,4 @@
+import datetime
 from time import sleep
 import requests
 import urllib
@@ -65,7 +66,10 @@ def download(username):
 
             file_url = node['node']['display_url']
             # file_url = file_url.replace("s640x640", "s1080x1080")
-            file_name = file_url.split("/")[-1]
+            
+            timestamp = node['node']['taken_at_timestamp']
+            date_from_timestamp = datetime.datetime.fromtimestamp(timestamp).isoformat()
+            file_name = date_from_timestamp.replace(':', '_').replace('-', '_') + '.jpg'
 
             path = entry.get() + "/" + username + "_" + file_name
 
